@@ -17,7 +17,7 @@ import requests
 from app.agent_graph import KP_OPENING_MARKER, NarrativeAgent
 from app.database import Database
 from app.parser import detect_source_type, parse_script_bundle, read_uploaded_document
-from app.vector_store import ChromaStore
+from app.vector_store import ChromaStore, ModelEmbedding
 
 import logging
 import sys
@@ -72,6 +72,7 @@ PUBLIC_DEMO_MIN_TURN_SECONDS = _env_float('PUBLIC_DEMO_MIN_TURN_SECONDS', 6.0)
 PUBLIC_DEMO_DAILY_TURN_BUDGET = _env_int('PUBLIC_DEMO_DAILY_TURN_BUDGET', 250)
 PUBLIC_DEMO_SESSION_TTL_HOURS = _env_float('PUBLIC_DEMO_SESSION_TTL_HOURS', 24.0)
 PUBLIC_DEMO_STRICT_CONFIG = _env_bool('PUBLIC_DEMO_STRICT_CONFIG', False)
+PUBLIC_DEMO_ADMIN_DIAGNOSTICS = _env_bool('PUBLIC_DEMO_ADMIN_DIAGNOSTICS', False)
 RUNTIME_ROOT = PROJECT_ROOT / '.runtime' / 'sessions'
 PUBLIC_DEMO_USAGE_PATH = PROJECT_ROOT / '.runtime' / 'public_demo_usage.json'
 UPSTASH_REDIS_REST_URL = (os.getenv('UPSTASH_REDIS_REST_URL') or '').strip().rstrip('/')
@@ -200,6 +201,52 @@ def _enforce_public_demo_config() -> None:
     if PUBLIC_DEMO_STRICT_CONFIG:
         st.error('This public demo is not fully configured yet. Please check back later.')
         st.stop()
+
+
+def _runtime_root_is_writable() -> bool:
+    try:
+        RUNTIME_ROOT.mkdir(parents=True, exist_ok=True)
+        probe = RUNTIME_ROOT / '.write_check'
+        probe.write_text('ok', encoding='utf-8')
+        probe.unlink(missing_ok=True)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning('Runtime root write check failed: %s', exc)
+        return False
+
+
+def _render_public_demo_diagnostics(db: Database) -> None:
+    if not PUBLIC_DEMO_ADMIN_DIAGNOSTICS:
+        return
+    errors, warnings = _public_demo_config_issues()
+    usage = _read_public_demo_usage()
+    provider = (os.getenv('LLM_PROVIDER') or 'backend file/default').strip()
+    model = (
+        os.getenv('OPENAI_MODEL')
+        or os.getenv('NVIDIA_MODEL')
+        or 'backend file/default'
+    )
+    budget_used = int(usage.get('turns', 0)) if isinstance(usage, dict) else 0
+    rows = [
+        ('Public mode', 'on' if PUBLIC_DEMO_MODE else 'off'),
+        ('Strict config', 'on' if PUBLIC_DEMO_STRICT_CONFIG else 'off'),
+        ('LLM credentials', 'configured' if _has_public_demo_llm_credentials() else 'missing'),
+        ('Provider', provider),
+        ('Model', model),
+        ('Upstash budget', 'configured' if (UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) else 'local fallback'),
+        ('Local budget used', f'{budget_used}/{PUBLIC_DEMO_DAILY_TURN_BUDGET}'),
+        ('Runtime writable', 'yes' if _runtime_root_is_writable() else 'no'),
+        ('Embedding loaded', 'yes' if ModelEmbedding._model is not None else 'no'),
+        ('Story stage', str(db.get_system_state().get('stage', 'unknown'))),
+    ]
+    with st.sidebar.expander('Admin Diagnostics', expanded=False):
+        st.caption('No secret values are shown here.')
+        for label, value in rows:
+            st.write(f'**{label}:** {value}')
+        if errors:
+            st.error(' / '.join(errors))
+        if warnings:
+            st.warning(' / '.join(warnings))
 
 
 def _public_demo_today() -> str:
