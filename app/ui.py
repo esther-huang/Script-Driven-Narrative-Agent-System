@@ -2517,6 +2517,7 @@ def run_app() -> None:
     db: Database = st.session_state.db
     vector: ChromaStore = st.session_state.vector
     agent: NarrativeAgent = st.session_state.agent
+    _render_public_demo_diagnostics(db)
     if not hasattr(agent, 'set_debug_mode'):
         st.session_state.agent = NarrativeAgent(db, vector)
         agent = st.session_state.agent

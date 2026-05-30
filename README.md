@@ -432,6 +432,7 @@ PUBLIC_DEMO_MIN_TURN_SECONDS = "6"
 PUBLIC_DEMO_DAILY_TURN_BUDGET = "250"
 PUBLIC_DEMO_SESSION_TTL_HOURS = "24"
 PUBLIC_DEMO_STRICT_CONFIG = "true"
+PUBLIC_DEMO_ADMIN_DIAGNOSTICS = "false"
 
 # Optional, recommended for multi-instance public deployment:
 UPSTASH_REDIS_REST_URL = "https://..."
@@ -448,6 +449,7 @@ Public demo safeguards:
 - a daily action budget is enforced by `PUBLIC_DEMO_DAILY_TURN_BUDGET`
 - if `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, the daily budget is shared through Upstash Redis; otherwise it falls back to an instance-local `.runtime/public_demo_usage.json` file
 - when `PUBLIC_DEMO_STRICT_CONFIG=true`, missing LLM credentials or invalid core limits stop the public demo with a friendly unavailable message
+- when `PUBLIC_DEMO_ADMIN_DIAGNOSTICS=true`, admins can inspect non-secret deployment health in the sidebar
 - embedding model loading is lazy, so opening the public landing screen does not immediately load the local sentence-transformer model
 
 Once the API key is set up, create and activate a virtual environment:
