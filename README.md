@@ -466,6 +466,10 @@ streamlit run main.py
 
 Open the URL shown by Streamlit (usually `http://localhost:8501`).
 
+## Public Demo Deployment
+
+For a public playable deployment checklist, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Notes
 
 - This project is designed for local standalone execution.
