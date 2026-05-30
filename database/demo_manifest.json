@@ -1,0 +1,149 @@
+{
+  "title": "The Harbor Light",
+  "tagline": "A compact coastal mystery about a missing lighthouse keeper and a signal that should not exist.",
+  "background_image": "assets/harbor-light-bg.png",
+  "case_kicker": "Graymouth Harbor / 3:17 a.m.",
+  "ready_kicker": "Investigation Prepared",
+  "ready_copy": "The harbor is waiting. Create your investigator, then step onto the pier.",
+  "case_note": "A private table is prepared for this run. Name your investigator, follow the harbor trail, and answer in free-form actions when the Keeper asks what you do next.",
+  "route_label": "Route of investigation",
+  "entry_button": "Begin Investigation",
+  "continue_button": "Create Investigator",
+  "save_character_button": "Enter Graymouth Harbor",
+  "chat_placeholder": "What do you do next?",
+  "chips": [
+    "Case 01",
+    "{turn_limit} turn cap",
+    "Solo investigation"
+  ],
+  "stages": [
+    {
+      "key": "upload",
+      "label": "Open case"
+    },
+    {
+      "key": "parse",
+      "label": "Set the scene"
+    },
+    {
+      "key": "character",
+      "label": "Investigator"
+    }
+  ],
+  "beats": [
+    {
+      "title": "Fogbound Pier",
+      "copy": "Question the constable and search the place where Elias Rook vanished."
+    },
+    {
+      "title": "The Broken Light",
+      "copy": "Read the keeper notes, inspect the lens, and decide what the signal means."
+    },
+    {
+      "title": "Dawn Choice",
+      "copy": "End the count quietly or break the lighthouse before the harbor answers."
+    }
+  ],
+  "character_presets": [
+    {
+      "archetype": "Harbor Detective",
+      "default_name": "Mara Quinn",
+      "background": "A city investigator sent to Graymouth after two winter disappearances were quietly closed as accidents.",
+      "stats": "STR:55,CON:60,SIZ:55,DEX:70,APP:50,INT:80,POW:65,EDU:75",
+      "occupation_skills": [
+        "Spot Hidden:70",
+        "Psychology:60",
+        "Law:50",
+        "Listen:55",
+        "Persuade:45",
+        "Firearms:35",
+        "Dodge:40",
+        "Fighting:30"
+      ],
+      "interest_skills": [
+        "Library Use:55",
+        "Locksmith:45",
+        "Occult:35",
+        "First Aid:35"
+      ]
+    },
+    {
+      "archetype": "Occult Journalist",
+      "default_name": "Eden Sable",
+      "background": "A freelance reporter chasing harbor folklore, missing-person files, and the strange rhythm of the lighthouse beam.",
+      "stats": "STR:45,CON:55,SIZ:50,DEX:65,APP:65,INT:85,POW:70,EDU:70",
+      "occupation_skills": [
+        "Library Use:75",
+        "Persuade:60",
+        "Psychology:45",
+        "Listen:50",
+        "Spot Hidden:55",
+        "Photography:45",
+        "Dodge:40",
+        "Fighting:20"
+      ],
+      "interest_skills": [
+        "Occult:70",
+        "History:45",
+        "Stealth:40",
+        "First Aid:25"
+      ]
+    },
+    {
+      "archetype": "Lighthouse Mechanic",
+      "default_name": "Thomas Vale",
+      "background": "A practical dockside repair hand who knows engines, storm damage, and which locals are lying about the old light.",
+      "stats": "STR:70,CON:70,SIZ:65,DEX:60,APP:45,INT:65,POW:60,EDU:60",
+      "occupation_skills": [
+        "Mechanical Repair:75",
+        "Electrical Repair:55",
+        "Spot Hidden:50",
+        "Listen:45",
+        "Operate Heavy Machinery:45",
+        "Persuade:30",
+        "Dodge:40",
+        "Fighting:45"
+      ],
+      "interest_skills": [
+        "Navigate:45",
+        "First Aid:40",
+        "Stealth:35",
+        "Occult:25"
+      ]
+    }
+  ],
+  "ending_title": "Case File Paused",
+  "ending_copy": "This public preview has reached its turn limit. Start a new run to try a different investigator or approach.",
+  "new_demo_button": "Start New Investigation",
+  "fallback_opening": "The case file is ready, but the Keeper needs a moment to connect. Try sending your first action in a few seconds.",
+  "fallback_turn": "The Keeper lost the thread for a moment. Please try that action again.",
+  "story_source_label": "Choose a story",
+  "official_demo_label": "Demo Story",
+  "upload_story_label": "Upload Markdown",
+  "upload_story_note": "Bring your own Markdown scenario. Headings become scenes and beats.",
+  "upload_story_button": "Prepare Uploaded Story",
+  "advanced_sheet_label": "Customize character sheet",
+  "upload_title": "Choose Your Own Story",
+  "upload_tagline": "Upload a Markdown scenario and turn it into a private playable table.",
+  "upload_case_kicker": "Custom Story / Markdown",
+  "upload_case_note": "Use Markdown headings for scenes and beats. You can still choose a ready-made investigator or customize the character sheet before play.",
+  "upload_chips": [
+    "Markdown upload",
+    "{turn_limit} turn cap",
+    "Custom table"
+  ],
+  "upload_beats": [
+    {
+      "title": "Bring a Scenario",
+      "copy": "Upload a Markdown file with scenes, clues, NPCs, or encounter notes."
+    },
+    {
+      "title": "Parse Into Play",
+      "copy": "The system prepares scenes and story beats from the document."
+    },
+    {
+      "title": "Play Your Way",
+      "copy": "Use a preset investigator or customize the character sheet before entering."
+    }
+  ]
+}

@@ -15,13 +15,17 @@ class ModelEmbedding:
     _model = None
 
     def __init__(self):
+        self.model = None
+
+    def _get_model(self):
         if ModelEmbedding._model is None:
             ModelEmbedding._model = SentenceTransformer("intfloat/multilingual-e5-base")
         self.model = ModelEmbedding._model
+        return self.model
 
     def _embed(self, texts: List[str], prefix: str) -> List[List[float]]:
         processed = [f"{prefix}: {t.strip()}" for t in texts]
-        embeddings = self.model.encode(processed, normalize_embeddings=True)
+        embeddings = self._get_model().encode(processed, normalize_embeddings=True)
         return embeddings.tolist()
 
     def __call__(self, input: Iterable[str]) -> List[List[float]]:
@@ -55,7 +59,6 @@ class ChromaStore:
             pass
         self.collection = self.client.get_or_create_collection(
             name='narrative_knowledge',
-            embedding_function=self.embedding_fn,
             metadata={'hnsw:space': 'cosine'},
         )
 

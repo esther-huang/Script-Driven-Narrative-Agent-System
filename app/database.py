@@ -347,25 +347,26 @@ class Database:
         return str(snapshot_path)
 
     def reset_story_data(self) -> None:
-        self.conn.execute("DELETE FROM scenes")
-        self.conn.execute("DELETE FROM plots")
-        self.conn.execute("DELETE FROM memory")
-        self.conn.execute("DELETE FROM summaries")
-        self.conn.execute("DELETE FROM knowledge_base")
-        self.conn.execute(
-            """
-            UPDATE system_state
-            SET current_scene_id = '',
-                current_plot_id = '',
-                plot_progress = 0.0,
-                scene_progress = 0.0,
-                current_scene_intro = '',
-                navigation_state_json = '{}',
-                current_visit_id = 0
-            WHERE id = 1
-            """
-        )
-        self.conn.commit()
+        # Delete child records before parents to satisfy FK constraints.
+        with self.conn:
+            self.conn.execute("DELETE FROM plots")
+            self.conn.execute("DELETE FROM scenes")
+            self.conn.execute("DELETE FROM memory")
+            self.conn.execute("DELETE FROM summaries")
+            self.conn.execute("DELETE FROM knowledge_base")
+            self.conn.execute(
+                """
+                UPDATE system_state
+                SET current_scene_id = '',
+                    current_plot_id = '',
+                    plot_progress = 0.0,
+                    scene_progress = 0.0,
+                    current_scene_intro = '',
+                    navigation_state_json = '{}',
+                    current_visit_id = 0
+                WHERE id = 1
+                """
+            )
 
     def insert_scenes(self, scenes: list[dict[str, Any]]) -> None:
         for scene_index, scene in enumerate(scenes, start=1):

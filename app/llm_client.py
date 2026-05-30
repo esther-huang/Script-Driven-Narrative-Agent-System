@@ -207,10 +207,11 @@ def _parse_llm_backend_file() -> tuple[str, dict[str, str]]:
     """
     Parse project-root llm_backend.txt.
 
-    - First non-comment line: global default (backend, optional model).
-    - Further lines: ``step_name = backend ...`` per-step override (backend + optional model).
+    - First non-comment line without ``=``: global default (backend, optional model).
+    - Any line containing ``step_name = backend ...``: per-step override (backend + optional model).
 
-    Lines without ``=`` after the first are ignored (backward compatible single-line files).
+    This parser is intentionally tolerant: if there is no explicit global line,
+    it falls back to ``qwen`` and still applies per-step overrides.
     """
     path = PROJECT_ROOT / LLM_BACKEND_FILE
     if not path.exists():
@@ -223,16 +224,19 @@ def _parse_llm_backend_file() -> tuple[str, dict[str, str]]:
         raw_lines.append(s)
     if not raw_lines:
         return "qwen", {}
-    global_line = raw_lines[0]
+    global_line = "qwen"
     steps: dict[str, str] = {}
-    for line in raw_lines[1:]:
-        if "=" not in line:
+    for line in raw_lines:
+        if "=" in line:
+            left, right = line.split("=", 1)
+            step = left.strip()
+            rest = right.strip()
+            if step and rest:
+                steps[step] = rest
             continue
-        left, right = line.split("=", 1)
-        step = left.strip()
-        rest = right.strip()
-        if step and rest:
-            steps[step] = rest
+        # First plain backend line wins as global default.
+        if global_line == "qwen":
+            global_line = line
     return global_line, steps
 
 

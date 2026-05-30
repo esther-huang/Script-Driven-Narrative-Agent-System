@@ -414,6 +414,42 @@ export OPENAI_TOP_P=0.95
 
 No code changes are required to switch: edit **`llm_backend.txt`** and ensure the matching API key is configured.
 
+### 3) Public demo deployment guardrails
+
+For Streamlit Community Cloud or any public deployment, configure secrets/environment variables in the deployment UI. Do **not** commit `api_key.txt`, `openai_api_key.txt`, or `.streamlit/secrets.toml`.
+
+Recommended public demo secrets:
+
+```toml
+OPENAI_API_KEY = "sk-..."
+LLM_PROVIDER = "openai"
+OPENAI_MODEL = "gpt-5_4-mini-2026-03-17"
+PUBLIC_DEMO_MODE = "true"
+PUBLIC_DEMO_MAX_TURNS = "18"
+PUBLIC_DEMO_MAX_INPUT_CHARS = "1200"
+PUBLIC_DEMO_MAX_UPLOAD_BYTES = "200000"
+PUBLIC_DEMO_MIN_TURN_SECONDS = "6"
+PUBLIC_DEMO_DAILY_TURN_BUDGET = "250"
+PUBLIC_DEMO_SESSION_TTL_HOURS = "24"
+PUBLIC_DEMO_STRICT_CONFIG = "true"
+
+# Optional, recommended for multi-instance public deployment:
+UPSTASH_REDIS_REST_URL = "https://..."
+UPSTASH_REDIS_REST_TOKEN = "..."
+```
+
+Public demo safeguards:
+
+- each browser session uses its own runtime directory under `.runtime/sessions/<session_id>`
+- old public demo session directories are cleaned after `PUBLIC_DEMO_SESSION_TTL_HOURS`
+- each public player action is capped by `PUBLIC_DEMO_MAX_INPUT_CHARS`
+- Markdown uploads are capped by `PUBLIC_DEMO_MAX_UPLOAD_BYTES`
+- repeated player actions are throttled by `PUBLIC_DEMO_MIN_TURN_SECONDS`
+- a daily action budget is enforced by `PUBLIC_DEMO_DAILY_TURN_BUDGET`
+- if `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, the daily budget is shared through Upstash Redis; otherwise it falls back to an instance-local `.runtime/public_demo_usage.json` file
+- when `PUBLIC_DEMO_STRICT_CONFIG=true`, missing LLM credentials or invalid core limits stop the public demo with a friendly unavailable message
+- embedding model loading is lazy, so opening the public landing screen does not immediately load the local sentence-transformer model
+
 Once the API key is set up, create and activate a virtual environment:
 
 ```bash
