@@ -31,7 +31,7 @@ Set these in the Streamlit Cloud app secrets UI, not in the repository.
 ```toml
 OPENAI_API_KEY = "sk-..."
 LLM_PROVIDER = "openai"
-OPENAI_MODEL = "gpt-5_4-mini-2026-03-17"
+OPENAI_MODEL = "gpt-5-mini"
 PUBLIC_DEMO_MODE = "true"
 PUBLIC_DEMO_STRICT_CONFIG = "true"
 PUBLIC_DEMO_ADMIN_DIAGNOSTICS = "false"

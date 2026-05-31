@@ -346,7 +346,7 @@ qwen qwen/qwen3.5-397b-a17b
 ```
 
 ```text
-openai gpt-5_4-mini-2026-03-17
+openai gpt-5-mini
 ```
 
 To switch to OpenAI, change that line to:
@@ -362,7 +362,7 @@ Reference copy: **`llm_backend.example.txt`** (you can duplicate it to `llm_back
 ```text
 qwen qwen/qwen2.5-7b-instruct
 
-generate_response = openai gpt-5_4-mini-2026-03-17
+generate_response = openai gpt-5-mini
 plot_summary_generation = qwen qwen/qwen3.5-397b-a17b
 ```
 
@@ -402,13 +402,13 @@ OPENAI_API_KEY=sk-...
 OpenAI-only tuning (optional):
 
 ```bash
-export OPENAI_MODEL="gpt-5_4-mini-2026-03-17"
+export OPENAI_MODEL="gpt-5-mini"
 export OPENAI_MAX_TOKENS=2048
 export OPENAI_TEMPERATURE=0.6
 export OPENAI_TOP_P=0.95
 ```
 
-**GPT-5.x on Chat Completions:** newer models expect **`max_completion_tokens`** instead of `max_tokens`. This project sends the correct field automatically when the model id looks like GPT-5 (for example `gpt-5.2`, `gpt-5.4`, or snapshots containing `gpt-5`). If you still see `unsupported parameter` errors, set `OPENAI_USE_MAX_COMPLETION_TOKENS=true` to force that behavior.
+**GPT-5.x on Chat Completions:** newer models expect **`max_completion_tokens`** instead of `max_tokens`. This project sends the correct field automatically when the model id looks like GPT-5 (for example `gpt-5-mini`, `gpt-5.2`, or snapshots containing `gpt-5`). If you still see `unsupported parameter` errors, set `OPENAI_USE_MAX_COMPLETION_TOKENS=true` to force that behavior.
 
 **Per-step keys must match code:** lines like `parser_extract = ...` only apply if the Python code passes `step_name="parser_extract"`. If the name does not match any call site, that row is ignored (see the list of known `step_name` values above).
 
@@ -423,7 +423,7 @@ Recommended public demo secrets:
 ```toml
 OPENAI_API_KEY = "sk-..."
 LLM_PROVIDER = "openai"
-OPENAI_MODEL = "gpt-5_4-mini-2026-03-17"
+OPENAI_MODEL = "gpt-5-mini"
 PUBLIC_DEMO_MODE = "true"
 PUBLIC_DEMO_MAX_TURNS = "18"
 PUBLIC_DEMO_MAX_INPUT_CHARS = "1200"

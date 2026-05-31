@@ -11,7 +11,7 @@ import requests
 NVIDIA_INVOKE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 NVIDIA_DEFAULT_MODEL = "qwen/qwen2.5-7b-instruct"
 OPENAI_INVOKE_URL = "https://api.openai.com/v1/chat/completions"
-OPENAI_DEFAULT_MODEL = "gpt-5_4-mini-2026-03-17"
+OPENAI_DEFAULT_MODEL = "gpt-5-mini"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LLM_BACKEND_FILE = "llm_backend.txt"
 logger = logging.getLogger(__name__)
@@ -178,7 +178,7 @@ def _parse_backend_line(raw: str) -> tuple[str, str | None]:
       - "qwen"
       - "openai"
       - "qwen qwen/qwen3.5-397b-a17b"
-      - "openai gpt-5_4-mini-2026-03-17"
+      - "openai gpt-5-mini"
     """
     text = (raw or "").strip()
     if not text:
@@ -656,4 +656,3 @@ if __name__ == "__main__":
     print("--------------------------------")
     response = call_llm(prompt, provider="nvidia", model="qwen/qwen3.5-397b-a17b")
     print(response)
-
