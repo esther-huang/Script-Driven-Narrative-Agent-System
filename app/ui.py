@@ -16,6 +16,7 @@ import requests
 
 from app.agent_graph import KP_OPENING_MARKER, NarrativeAgent
 from app.database import Database
+from app.llm_client import call_llm
 from app.parser import detect_source_type, parse_script_bundle, read_uploaded_document
 from app.vector_store import ChromaStore, ModelEmbedding
 
@@ -1785,7 +1786,7 @@ def _hint_subject(text: str, prefixes: tuple[str, ...]) -> str:
     return compact
 
 
-def _public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
+def _fallback_public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
     scene = db.get_scene(str(state.get('current_scene_id', '') or ''))
     plot = db.get_plot(str(state.get('current_plot_id', '') or ''))
     scene_name = str((scene or {}).get('scene_name', '') or '').strip()
@@ -1807,6 +1808,7 @@ def _public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
             'read ',
             'confront ',
             'search ',
+            'open ',
             'go to ',
             'enter ',
         ),
@@ -1824,6 +1826,11 @@ def _public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
             lines.append(f'{subject or "当前地点"} 值得慢一点查。重点看重复的形状、刻痕、摆放得过于刻意的东西，或者通往下一个地方的痕迹。')
         else:
             lines.append(f'{subject or "the current place"} is worth a closer look. Search for repeated shapes, marks, anything arranged too deliberately, or a route to the next lead.')
+    elif 'open' in lower_plot or 'locked' in lower_plot or 'gate' in lower_plot:
+        if chinese:
+            lines.append(f'围绕 {subject or "这道阻碍"} 做一个具体动作：请持钥匙的人帮忙、检查锁和附近痕迹，或尝试安静打开。')
+        else:
+            lines.append(f'Focus on {subject or "the obstacle"}: ask someone with access, inspect the lock and nearby traces, or try opening it quietly.')
     elif 'read' in lower_plot:
         if chinese:
             lines.append(f'先读 {subject or "这份文字材料"}，再把反复出现的名字、数字、地点和你已经听到的异常现象对照起来。')
@@ -1842,58 +1849,108 @@ def _public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
     elif plot_name or plot_goal:
         handle = plot_name or plot_goal
         if chinese:
-            lines.append(f'把“{handle}”当成当前抓手。选一个具体动作：询问、观察、搜查、比较线索，或前往一个被点名的地点。')
+            lines.append(f'围绕“{handle}”做一个具体动作：询问、观察、搜查，或比较你已经拿到的线索。')
         else:
-            lines.append(f'Treat "{handle}" as the current handle. Pick one concrete action: ask, inspect, search, compare clues, or move toward a named place.')
-
-    context = _first_sentence(scene_description, scene_name)
-    if context:
-        if chinese:
-            lines.append(f'把场景文字当作行动菜单：{_short_text(context, 150)} 里面的人、物件、地点都可以成为下一步。')
-        else:
-            lines.append(f'Use the scene text as your menu: {_short_text(context, 150)} Any person, object, or place in it can become your next action.')
+            lines.append(f'Pick one concrete action around "{handle}": ask, inspect, search, or compare it with a clue you already have.')
 
     if raw_text and not lines:
         if chinese:
-            lines.append(f'从当前 beat 的表面信息开始：{_short_text(raw_text, 150)} 先做一个不冒进的观察或提问。')
+            lines.append(f'先从眼前最具体的东西下手：{_short_text(raw_text, 90)}')
         else:
-            lines.append(f'Start from the visible surface of this beat: {_short_text(raw_text, 150)} Make one careful observation or question before escalating.')
-
-    if chinese:
-        lines.append('可直接输入一句自然语言动作，例如：“我追问最后一条无线电消息。” 或 “我检查木箱和门锁附近有没有痕迹。”')
-    else:
-        lines.append('You can type a plain action, such as: "I ask about the final radio message" or "I inspect the crate and gate for traces."')
+            lines.append(f'Start with the most concrete thing in front of you: {_short_text(raw_text, 90)}')
 
     deduped: list[str] = []
     for line in lines:
         clean = line.strip()
         if clean and clean not in deduped:
             deduped.append(clean)
-    return deduped[:3]
+    if deduped:
+        return deduped[:1]
+    if scene_name:
+        if chinese:
+            return [f'先选一个场景里的具体对象行动：询问一个人、检查一件物品，或前往一个被提到的地点。']
+        return ['Choose one concrete thing in the scene: question a person, inspect an object, or move toward a named place.']
+    return ['Try one specific action: ask, inspect, search, or move to a named location.']
+
+
+def _recent_play_context(messages: list[dict[str, object]], limit: int = 4) -> str:
+    recent = messages[-limit:]
+    lines: list[str] = []
+    for turn in recent:
+        user = _short_text(turn.get('user', ''), 220)
+        agent = _short_text(turn.get('agent', ''), 320)
+        if user:
+            lines.append(f'Player: {user}')
+        if agent:
+            lines.append(f'Keeper: {agent}')
+    return '\n'.join(lines)
+
+
+def _generate_public_hint(db: Database, state: dict[str, object]) -> list[str]:
+    scene = db.get_scene(str(state.get('current_scene_id', '') or '')) or {}
+    plot = db.get_plot(str(state.get('current_plot_id', '') or '')) or {}
+    language = str(state.get('output_language', 'English') or 'English')
+    recent_context = _recent_play_context(list(st.session_state.get('messages', [])))
+    prompt = f"""You are a tabletop RPG Keeper giving a stuck player one gentle hint.
+
+Goal: help the player choose a next action without spoiling hidden facts or solving the mystery.
+
+Rules:
+- Output exactly one short hint sentence.
+- Write entirely in {language}.
+- Do not mention that you are an AI or that this is a hint.
+- Do not reveal hidden clues, answers, culprit identity, final solution, or future plot beats.
+- Use the player's recent context first. If they are stuck at an obstacle, suggest a concrete action they can try.
+- Keep it under 28 words in English, or under 45 Chinese characters.
+
+Current scene:
+Name: {scene.get('scene_name', '')}
+Description: {_short_text(scene.get('scene_description', ''), 700)}
+
+Current plot:
+Name: {plot.get('plot_name', '')}
+Goal: {plot.get('plot_goal', '')}
+Keeper-only plot notes: {_short_text(plot.get('raw_text', ''), 900)}
+
+Recent play:
+{recent_context or '(No player action yet.)'}
+"""
+    try:
+        text = call_llm(prompt, step_name='generate_player_hint', max_retries=1, timeout=25).strip()
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning('Public hint LLM generation failed; using fallback hint: %s', exc)
+        return _fallback_public_hint_lines(db, state)
+    text = re.sub(r'\s+', ' ', text).strip().strip('"').strip("'")
+    if not text:
+        return _fallback_public_hint_lines(db, state)
+    return [_short_text(text, 180)]
 
 
 def _render_public_hint_controls(db: Database, state: dict[str, object]) -> None:
     language = str(state.get('output_language', 'English') or 'English').lower()
     chinese = language.startswith('chinese')
     button_label = 'Get a hint' if not chinese else '获取提示'
-    title = 'Gentle hint' if not chinese else '轻提示'
-    copy = 'No spoilers, just a playable next step.' if not chinese else '不剧透，只给一个可以继续行动的方向。'
+    title = 'Hint' if not chinese else '提示'
 
     hint_col, _ = st.columns([1.1, 4])
     with hint_col:
         if st.button(button_label, key='public_demo_hint_button', use_container_width=True, type='tertiary'):
-            st.session_state.public_demo_hint_lines = _public_hint_lines(db, state)
+            if not st.session_state.get('public_demo_hint_lines'):
+                budget_ok, budget_message = _reserve_public_demo_turn()
+                if budget_ok:
+                    st.session_state.public_demo_hint_lines = _generate_public_hint(db, state)
+                else:
+                    st.session_state.public_demo_hint_lines = [budget_message]
 
     hint_lines = st.session_state.get('public_demo_hint_lines') or []
     if not hint_lines:
         return
-    items_html = ''.join(f'<li>{escape(str(item))}</li>' for item in hint_lines)
+    hint_text = escape(str(hint_lines[0]))
     st.markdown(
         f"""
         <div class="gm-hint-card">
             <div class="gm-hint-title">{escape(title)}</div>
-            <div class="gm-hint-copy">{escape(copy)}</div>
-            <ul class="gm-hint-list">{items_html}</ul>
+            <div class="gm-hint-copy">{hint_text}</div>
         </div>
         """,
         unsafe_allow_html=True,

@@ -45,6 +45,8 @@ def _step_max_tokens(step_name: str, default_max_tokens: int) -> int:
         return min(default_max_tokens, 256)
     if step in {"generate_retrieval_queries"}:
         return min(default_max_tokens, 512)
+    if step in {"generate_player_hint"}:
+        return min(default_max_tokens, 160)
     if step in {
         "pre_response_transition_evaluation",
         "plot_completion_evaluation",
