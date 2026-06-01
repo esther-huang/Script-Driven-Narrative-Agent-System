@@ -71,14 +71,17 @@ UPSTASH_REDIS_REST_TOKEN = "..."
 
 Also set hard limits and alerts in the model provider dashboard. The app-level budget is a guardrail, not a billing guarantee.
 
+The built-in `Demo Story` uses `database/DemoScript.parsed.json`, a pre-parsed scene/plot/knowledge snapshot, so public visitors do not spend LLM parser tokens every time they start the demo. This is only a cost optimization for the bundled demo story. Uploaded Markdown scenarios still use the live parser and are converted into the same runtime structure before play begins.
+
 ## 5. Pre-deploy local checks
 
 Run:
 
 ```bash
-python -m py_compile app/ui.py app/vector_store.py test/test_public_demo_smoke.py
+python -m py_compile app/ui.py app/vector_store.py test/test_demo_preparse.py test/test_public_demo_smoke.py
 .venv/bin/python test/test_init.py
 .venv/bin/python test/test_main.py
+.venv/bin/python test/test_demo_preparse.py
 .venv/bin/python test/test_public_demo_smoke.py
 ```
 

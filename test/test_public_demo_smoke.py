@@ -70,7 +70,7 @@ class FakeAgent:
         }}
 
 
-def fake_demo_bundle():
+def fake_demo_bundle(*args, **kwargs):
     return {{
         'script_summary': 'A compact lighthouse mystery.',
         'source_metadata': {{'source_file_name': 'FakeDemo.md'}},

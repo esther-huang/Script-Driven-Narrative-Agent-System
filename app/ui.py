@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import random
@@ -64,6 +65,7 @@ def _image_data_uri(path: str) -> str:
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEMO_SCRIPT_PATH = PROJECT_ROOT / 'database' / 'DemoScript.md'
+DEMO_PARSED_PATH = PROJECT_ROOT / 'database' / 'DemoScript.parsed.json'
 DEMO_MANIFEST_PATH = PROJECT_ROOT / 'database' / 'demo_manifest.json'
 PUBLIC_DEMO_MODE = os.getenv('PUBLIC_DEMO_MODE', 'true').strip().lower() not in {'0', 'false', 'no', 'off'}
 PUBLIC_DEMO_MAX_TURNS = _env_int('PUBLIC_DEMO_MAX_TURNS', 18)
@@ -2587,10 +2589,43 @@ def _parse_markdown_script_locally(script_text: str, source_file_name: str) -> d
     }
 
 
-def _load_demo_script_bundle() -> dict[str, object]:
+def _load_preparsed_demo_bundle(script_text: str) -> dict[str, object] | None:
+    if not DEMO_PARSED_PATH.exists():
+        return None
+    try:
+        bundle = json.loads(DEMO_PARSED_PATH.read_text(encoding='utf-8'))
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning('Demo preparse snapshot could not be read; falling back to parser: %s', exc)
+        return None
+    if not isinstance(bundle, dict):
+        LOGGER.warning('Demo preparse snapshot is not a JSON object; falling back to parser.')
+        return None
+    source_metadata = bundle.get('source_metadata', {})
+    if not isinstance(source_metadata, dict):
+        source_metadata = {}
+        bundle['source_metadata'] = source_metadata
+    expected_hash = str(source_metadata.get('source_sha256', '') or '').strip()
+    actual_hash = hashlib.sha256(script_text.encode('utf-8')).hexdigest()
+    if expected_hash and expected_hash != actual_hash:
+        LOGGER.warning('Demo preparse snapshot is stale; falling back to parser.')
+        return None
+    if not isinstance(bundle.get('scenes'), list) or not isinstance(bundle.get('knowledge'), list):
+        LOGGER.warning('Demo preparse snapshot is missing scenes or knowledge; falling back to parser.')
+        return None
+    source_metadata['loaded_from_preparsed_snapshot'] = True
+    return bundle
+
+
+def _load_demo_script_bundle(*, allow_llm_parse: bool = True) -> dict[str, object]:
     if not DEMO_SCRIPT_PATH.exists():
         raise FileNotFoundError(f'Demo script not found: {DEMO_SCRIPT_PATH}')
     script_text = DEMO_SCRIPT_PATH.read_text(encoding='utf-8')
+    preparsed_bundle = _load_preparsed_demo_bundle(script_text)
+    if preparsed_bundle is not None:
+        return preparsed_bundle
+    if not allow_llm_parse:
+        LOGGER.info('Demo preparse unavailable; using local markdown fallback without LLM parsing.')
+        return _parse_markdown_script_locally(script_text, DEMO_SCRIPT_PATH.name)
     try:
         return _parse_demo_script_cached(script_text)
     except Exception as exc:  # noqa: BLE001
@@ -2898,15 +2933,7 @@ def run_app() -> None:
                             bundle = _parse_markdown_script_locally(document.text, document.source_file_name)
                     else:
                         document = None
-                        budget_ok, budget_message = _reserve_public_demo_turn()
-                        if budget_ok:
-                            bundle = _load_demo_script_bundle()
-                        else:
-                            LOGGER.info('Public demo official parse used local fallback: %s', budget_message)
-                            bundle = _parse_markdown_script_locally(
-                                DEMO_SCRIPT_PATH.read_text(encoding='utf-8'),
-                                DEMO_SCRIPT_PATH.name,
-                            )
+                        bundle = _load_demo_script_bundle(allow_llm_parse=False)
                 else:
                     document = read_uploaded_document(
                         uploaded.name,

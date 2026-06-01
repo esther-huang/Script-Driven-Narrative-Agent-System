@@ -450,6 +450,8 @@ Public demo safeguards:
 - if `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, the daily budget is shared through Upstash Redis; otherwise it falls back to an instance-local `.runtime/public_demo_usage.json` file
 - when `PUBLIC_DEMO_STRICT_CONFIG=true`, missing LLM credentials or invalid core limits stop the public demo with a friendly unavailable message
 - when `PUBLIC_DEMO_ADMIN_DIAGNOSTICS=true`, admins can inspect non-secret deployment health in the sidebar
+- the built-in `Demo Story` loads `database/DemoScript.parsed.json`, a pre-parsed scene/plot/knowledge snapshot, to avoid spending LLM parser tokens every time a public visitor starts the demo
+- uploaded Markdown scenarios are still parsed live into the same scene/plot/knowledge structure before play begins
 - embedding model loading is lazy, so opening the public landing screen does not immediately load the local sentence-transformer model
 
 Once the API key is set up, create and activate a virtual environment:
