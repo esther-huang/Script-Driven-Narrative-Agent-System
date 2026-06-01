@@ -422,8 +422,6 @@ Recommended public demo secrets:
 
 ```toml
 OPENAI_API_KEY = "sk-..."
-LLM_PROVIDER = "openai"
-OPENAI_MODEL = "gpt-5.4-mini"
 PUBLIC_DEMO_MODE = "true"
 PUBLIC_DEMO_MAX_TURNS = "18"
 PUBLIC_DEMO_MAX_INPUT_CHARS = "1200"
@@ -439,6 +437,8 @@ UPSTASH_REDIS_REST_URL = "https://..."
 UPSTASH_REDIS_REST_TOKEN = "..."
 ```
 
+When `PUBLIC_DEMO_MODE=true`, the app uses the committed `llm_backend.public.txt` routing file if it exists. Do not set `LLM_PROVIDER`, `OPENAI_MODEL`, or `NVIDIA_MODEL` in Streamlit secrets if you want that file's per-step routing to apply. Set those secrets only when you intentionally want one deployment-wide override.
+
 Public demo safeguards:
 
 - each browser session uses its own runtime directory under `.runtime/sessions/<session_id>`
@@ -448,6 +448,7 @@ Public demo safeguards:
 - repeated player actions are throttled by `PUBLIC_DEMO_MIN_TURN_SECONDS`
 - a daily action budget is enforced by `PUBLIC_DEMO_DAILY_TURN_BUDGET`
 - if `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, the daily budget is shared through Upstash Redis; otherwise it falls back to an instance-local `.runtime/public_demo_usage.json` file
+- `PUBLIC_DEMO_MAX_TURNS` is a per-session experience limit; use Upstash-backed `PUBLIC_DEMO_DAILY_TURN_BUDGET` plus provider-side spend caps to protect the API key from refresh/new-session abuse
 - when `PUBLIC_DEMO_STRICT_CONFIG=true`, missing LLM credentials or invalid core limits stop the public demo with a friendly unavailable message
 - when `PUBLIC_DEMO_ADMIN_DIAGNOSTICS=true`, admins can inspect non-secret deployment health in the sidebar
 - the built-in `Demo Story` loads `database/DemoScript.parsed.json`, a pre-parsed scene/plot/knowledge snapshot, to avoid spending LLM parser tokens every time a public visitor starts the demo

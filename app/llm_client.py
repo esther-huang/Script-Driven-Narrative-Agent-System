@@ -14,6 +14,7 @@ OPENAI_INVOKE_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_DEFAULT_MODEL = "gpt-5.4-mini"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LLM_BACKEND_FILE = "llm_backend.txt"
+PUBLIC_LLM_BACKEND_FILE = "llm_backend.public.txt"
 logger = logging.getLogger(__name__)
 _GLOBAL_RETRYABLE_COOLDOWN_UNTIL = 0.0
 
@@ -205,9 +206,27 @@ def _backend_alias_to_provider(token: str) -> str:
     )
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _llm_backend_path() -> Path:
+    configured = (os.getenv("LLM_BACKEND_FILE") or "").strip()
+    if configured:
+        path = Path(configured)
+        return path if path.is_absolute() else PROJECT_ROOT / path
+    public_path = PROJECT_ROOT / PUBLIC_LLM_BACKEND_FILE
+    if _env_bool("PUBLIC_DEMO_MODE", False) and public_path.exists():
+        return public_path
+    return PROJECT_ROOT / LLM_BACKEND_FILE
+
+
 def _parse_llm_backend_file() -> tuple[str, dict[str, str]]:
     """
-    Parse project-root llm_backend.txt.
+    Parse the configured backend routing file.
 
     - First non-comment line without ``=``: global default (backend, optional model).
     - Any line containing ``step_name = backend ...``: per-step override (backend + optional model).
@@ -215,7 +234,7 @@ def _parse_llm_backend_file() -> tuple[str, dict[str, str]]:
     This parser is intentionally tolerant: if there is no explicit global line,
     it falls back to ``qwen`` and still applies per-step overrides.
     """
-    path = PROJECT_ROOT / LLM_BACKEND_FILE
+    path = _llm_backend_path()
     if not path.exists():
         return "qwen", {}
     raw_lines: list[str] = []
