@@ -1727,6 +1727,8 @@ def _render_public_demo_entry(story_source: str = 'official') -> None:
 
 
 def _render_public_parse_summary(scenes: list[dict[str, object]], plot_count: int, est_minutes: int) -> None:
+    first_scene = scenes[0] if scenes else {}
+    current_lead = str(first_scene.get('scene_name', '') or 'The opening scene').strip()
     st.markdown(
         f"""
         <div class="gm-case-hero">
@@ -1744,10 +1746,9 @@ def _render_public_parse_summary(scenes: list[dict[str, object]], plot_count: in
         """,
         unsafe_allow_html=True,
     )
-    scene_names = [str(scene.get('scene_name', '') or scene.get('scene_id', '')).strip() for scene in scenes[:4]]
-    if scene_names:
+    if current_lead:
         st.markdown(f"**{escape(_demo_text('route_label'))}**")
-        st.write(' / '.join(scene_names))
+        st.write(f'{current_lead}. New leads will open as you play.')
 
 
 def _render_session_banner(state: dict[str, object], player_turns: int) -> None:

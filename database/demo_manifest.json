@@ -6,7 +6,7 @@
   "ready_kicker": "Investigation Prepared",
   "ready_copy": "The harbor is waiting. Create your investigator, then step onto the pier.",
   "case_note": "A private table is prepared for this run. Name your investigator, follow the harbor trail, and answer in free-form actions when the Keeper asks what you do next.",
-  "route_label": "Route of investigation",
+  "route_label": "Current lead",
   "entry_button": "Begin Investigation",
   "continue_button": "Create Investigator",
   "save_character_button": "Enter Graymouth Harbor",
@@ -30,20 +30,7 @@
       "label": "Investigator"
     }
   ],
-  "beats": [
-    {
-      "title": "Fogbound Pier",
-      "copy": "Question the constable and search the place where Elias Rook vanished."
-    },
-    {
-      "title": "The Broken Light",
-      "copy": "Read the keeper notes, inspect the lens, and decide what the signal means."
-    },
-    {
-      "title": "Dawn Choice",
-      "copy": "End the count quietly or break the lighthouse before the harbor answers."
-    }
-  ],
+  "beats": [],
   "character_presets": [
     {
       "archetype": "Harbor Detective",
