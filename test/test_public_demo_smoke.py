@@ -136,6 +136,8 @@ def main() -> int:
 
         page_text = str(at)
         assert 'Keeper' in page_text or 'keeper' in page_text.lower(), 'session should render keeper dialogue'
+        button_labels = [getattr(button, 'label', '') for button in at.button]
+        assert 'Get a hint' in button_labels, 'hint button should be available in session'
         assert 'What do you do next?' in page_text, 'chat input should be available in session'
 
         print('[test_public_demo_smoke] result: PASS')

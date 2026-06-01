@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import base64
 import json
@@ -637,6 +637,7 @@ def _inject_demo_theme() -> None:
 
         .gm-investigator-card,
         .gm-report-card,
+        .gm-hint-card,
         .gm-side-panel {
             border: 1px solid rgba(0, 39, 76, 0.13);
             border-radius: 8px;
@@ -647,6 +648,7 @@ def _inject_demo_theme() -> None:
 
         .gm-investigator-title,
         .gm-report-title,
+        .gm-hint-title,
         .gm-side-title {
             color: var(--um-blue);
             font-size: 1rem;
@@ -656,10 +658,28 @@ def _inject_demo_theme() -> None:
 
         .gm-investigator-copy,
         .gm-report-copy,
+        .gm-hint-copy,
         .gm-side-copy {
             color: rgba(20, 33, 46, 0.9);
             line-height: 1.55;
             font-size: 0.9rem;
+        }
+
+        .gm-hint-card {
+            max-width: 54rem;
+            border-left: 3px solid rgba(215, 177, 74, 0.82);
+            margin-top: 0;
+        }
+
+        .gm-hint-list {
+            margin: 0.4rem 0 0 1.1rem;
+            padding: 0;
+        }
+
+        .gm-hint-list li {
+            color: rgba(20, 33, 46, 0.9);
+            line-height: 1.55;
+            margin: 0.24rem 0;
         }
 
         .gm-stat-grid {
@@ -1338,6 +1358,7 @@ def _inject_demo_theme() -> None:
             .gm-feature,
             .gm-investigator-card,
             .gm-report-card,
+            .gm-hint-card,
             .gm-side-panel,
             .gm-statusline,
             .gm-session-banner,
@@ -1353,6 +1374,7 @@ def _inject_demo_theme() -> None:
             .gm-feature-title,
             .gm-investigator-title,
             .gm-report-title,
+            .gm-hint-title,
             .gm-side-title,
             .gm-stat-value,
             .gm-section-title,
@@ -1364,10 +1386,15 @@ def _inject_demo_theme() -> None:
 
             .gm-investigator-copy,
             .gm-report-copy,
+            .gm-hint-copy,
             .gm-side-copy,
             .gm-status-kicker,
             .gm-stat-label {{
                 color: rgba(246, 240, 223, 0.82) !important;
+            }}
+
+            .gm-hint-list li {{
+                color: rgba(246, 240, 223, 0.86) !important;
             }}
 
             .gm-dialogue {{
@@ -1747,6 +1774,130 @@ def _short_text(value: object, limit: int = 140) -> str:
     if len(text) <= limit:
         return text
     return text[: max(0, limit - 1)].rstrip() + '...'
+
+
+def _hint_subject(text: str, prefixes: tuple[str, ...]) -> str:
+    compact = re.sub(r'\s+', ' ', text or '').strip()
+    lower = compact.lower()
+    for prefix in prefixes:
+        if lower.startswith(prefix):
+            return compact[len(prefix) :].strip(' .:;-') or compact
+    return compact
+
+
+def _public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
+    scene = db.get_scene(str(state.get('current_scene_id', '') or ''))
+    plot = db.get_plot(str(state.get('current_plot_id', '') or ''))
+    scene_name = str((scene or {}).get('scene_name', '') or '').strip()
+    scene_description = str((scene or {}).get('scene_description', '') or '').strip()
+    plot_name = str((plot or {}).get('plot_name', '') or '').strip()
+    plot_goal = str((plot or {}).get('plot_goal', '') or '').strip()
+    raw_text = str((plot or {}).get('raw_text', '') or '').strip()
+    language = str(state.get('output_language', 'English') or 'English').lower()
+    chinese = language.startswith('chinese')
+
+    subject = _hint_subject(
+        plot_name or plot_goal,
+        (
+            'speak with ',
+            'talk to ',
+            'question ',
+            'inspect ',
+            'examine ',
+            'read ',
+            'confront ',
+            'search ',
+            'go to ',
+            'enter ',
+        ),
+    )
+    lower_plot = (plot_name or plot_goal).lower()
+    lines: list[str] = []
+
+    if 'speak' in lower_plot or 'talk' in lower_plot or 'question' in lower_plot:
+        if chinese:
+            lines.append(f'先从 {subject or "当前人物"} 入手。可以问对方看见了什么、有什么东西不见了、哪个细节让人不舒服。')
+        else:
+            lines.append(f'Start with {subject or "the person in front of you"}. Ask what they saw, what is missing, and which detail feels out of place.')
+    elif 'inspect' in lower_plot or 'examine' in lower_plot or 'search' in lower_plot:
+        if chinese:
+            lines.append(f'{subject or "当前地点"} 值得慢一点查。重点看重复的形状、刻痕、摆放得过于刻意的东西，或者通往下一个地方的痕迹。')
+        else:
+            lines.append(f'{subject or "the current place"} is worth a closer look. Search for repeated shapes, marks, anything arranged too deliberately, or a route to the next lead.')
+    elif 'read' in lower_plot:
+        if chinese:
+            lines.append(f'先读 {subject or "这份文字材料"}，再把反复出现的名字、数字、地点和你已经听到的异常现象对照起来。')
+        else:
+            lines.append(f'Read {subject or "the written clue"} first, then compare repeated names, numbers, places, and odd details you have already heard.')
+    elif 'confront' in lower_plot:
+        if chinese:
+            lines.append(f'不要空手质问 {subject or "对方"}。先拿一个你已经发现的证据或矛盾点去施压。')
+        else:
+            lines.append(f'Do not confront {subject or "them"} empty-handed. Bring one piece of evidence or one contradiction you have already found.')
+    elif 'end' in lower_plot or 'decide' in lower_plot:
+        if chinese:
+            lines.append('这里更像选择题：先确认你理解了规则，再决定是安静地修正它，还是用更激烈的办法中断它。')
+        else:
+            lines.append('This is closer to a choice point: make sure you understand the pattern, then decide whether to correct it quietly or interrupt it more forcefully.')
+    elif plot_name or plot_goal:
+        handle = plot_name or plot_goal
+        if chinese:
+            lines.append(f'把“{handle}”当成当前抓手。选一个具体动作：询问、观察、搜查、比较线索，或前往一个被点名的地点。')
+        else:
+            lines.append(f'Treat "{handle}" as the current handle. Pick one concrete action: ask, inspect, search, compare clues, or move toward a named place.')
+
+    context = _first_sentence(scene_description, scene_name)
+    if context:
+        if chinese:
+            lines.append(f'把场景文字当作行动菜单：{_short_text(context, 150)} 里面的人、物件、地点都可以成为下一步。')
+        else:
+            lines.append(f'Use the scene text as your menu: {_short_text(context, 150)} Any person, object, or place in it can become your next action.')
+
+    if raw_text and not lines:
+        if chinese:
+            lines.append(f'从当前 beat 的表面信息开始：{_short_text(raw_text, 150)} 先做一个不冒进的观察或提问。')
+        else:
+            lines.append(f'Start from the visible surface of this beat: {_short_text(raw_text, 150)} Make one careful observation or question before escalating.')
+
+    if chinese:
+        lines.append('可直接输入一句自然语言动作，例如：“我追问最后一条无线电消息。” 或 “我检查木箱和门锁附近有没有痕迹。”')
+    else:
+        lines.append('You can type a plain action, such as: "I ask about the final radio message" or "I inspect the crate and gate for traces."')
+
+    deduped: list[str] = []
+    for line in lines:
+        clean = line.strip()
+        if clean and clean not in deduped:
+            deduped.append(clean)
+    return deduped[:3]
+
+
+def _render_public_hint_controls(db: Database, state: dict[str, object]) -> None:
+    language = str(state.get('output_language', 'English') or 'English').lower()
+    chinese = language.startswith('chinese')
+    button_label = 'Get a hint' if not chinese else '获取提示'
+    title = 'Gentle hint' if not chinese else '轻提示'
+    copy = 'No spoilers, just a playable next step.' if not chinese else '不剧透，只给一个可以继续行动的方向。'
+
+    hint_col, _ = st.columns([1.1, 4])
+    with hint_col:
+        if st.button(button_label, key='public_demo_hint_button', use_container_width=True, type='tertiary'):
+            st.session_state.public_demo_hint_lines = _public_hint_lines(db, state)
+
+    hint_lines = st.session_state.get('public_demo_hint_lines') or []
+    if not hint_lines:
+        return
+    items_html = ''.join(f'<li>{escape(str(item))}</li>' for item in hint_lines)
+    st.markdown(
+        f"""
+        <div class="gm-hint-card">
+            <div class="gm-hint-title">{escape(title)}</div>
+            <div class="gm-hint-copy">{escape(copy)}</div>
+            <ul class="gm-hint-list">{items_html}</ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _demo_character_presets(generated_builds: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -2157,6 +2308,7 @@ STORY_RUNTIME_SESSION_KEYS = (
     'character_name_input',
     'character_background_input',
     'build_pick_label',
+    'public_demo_hint_lines',
 )
 
 
@@ -2830,7 +2982,7 @@ def run_app() -> None:
                 st.error('No playable character presets are available.')
                 st.stop()
             if st.session_state.get('public_character_choice') not in preset_names:
-                st.session_state.public_character_choice = preset_names[0]
+                st.session_state['public_character_choice'] = preset_names[0]
 
             selected_preset_name = st.radio(
                 'Choose investigator',
@@ -2844,14 +2996,14 @@ def run_app() -> None:
             )
 
             if st.session_state.get('last_public_character_choice') != selected_preset_name:
-                st.session_state.last_public_character_choice = selected_preset_name
-                st.session_state.character_name_input = str(selected_preset.get('default_name', selected_preset_name))
-                st.session_state.character_background_input = str(selected_preset.get('background', ''))
-                st.session_state.character_stats_line = str(selected_preset.get('line', ''))
-                st.session_state.occupation_alloc_text = '\n'.join(
+                st.session_state['last_public_character_choice'] = selected_preset_name
+                st.session_state['character_name_input'] = str(selected_preset.get('default_name', selected_preset_name))
+                st.session_state['character_background_input'] = str(selected_preset.get('background', ''))
+                st.session_state['character_stats_line'] = str(selected_preset.get('line', ''))
+                st.session_state['occupation_alloc_text'] = '\n'.join(
                     str(item) for item in selected_preset.get('occupation_suggested', [])
                 )
-                st.session_state.interest_alloc_text = '\n'.join(
+                st.session_state['interest_alloc_text'] = '\n'.join(
                     str(item) for item in selected_preset.get('interest_suggested', [])
                 )
 
@@ -3044,9 +3196,12 @@ def run_app() -> None:
             _render_demo_end_card(db, vector, state, player_turns)
             user_msg = None
         else:
+            if PUBLIC_DEMO_MODE:
+                _render_public_hint_controls(db, state)
             placeholder = _demo_text('chat_placeholder', 'What do you do next?') if PUBLIC_DEMO_MODE else 'Describe your action...'
             user_msg = st.chat_input(placeholder)
         if user_msg:
+            st.session_state.pop('public_demo_hint_lines', None)
             if PUBLIC_DEMO_MODE:
                 if len(user_msg) > PUBLIC_DEMO_MAX_INPUT_CHARS:
                     st.warning(f'Please keep each action under {PUBLIC_DEMO_MAX_INPUT_CHARS} characters.')
