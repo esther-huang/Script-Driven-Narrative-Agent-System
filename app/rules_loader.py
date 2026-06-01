@@ -19,7 +19,7 @@ def load_game_rules_knowledge() -> list[dict[str, Any]]:
     sections = _split_markdown_sections(raw_text)
     knowledge_items: list[dict[str, Any]] = []
     for idx, section in enumerate(sections, start=1):
-        title = section['title'].strip() or f'Call of Cthulhu Rules {idx}'
+        title = section['title'].strip() or f'D100 Investigation Rules {idx}'
         content = section['content'].strip()
         if not content:
             continue
@@ -42,7 +42,7 @@ def load_game_rules_knowledge() -> list[dict[str, Any]]:
 def _split_markdown_sections(text: str) -> list[dict[str, str]]:
     lines = text.splitlines()
     sections: list[dict[str, str]] = []
-    current_title = 'Call of Cthulhu Rules'
+    current_title = 'D100 Investigation Rules'
     current_lines: list[str] = []
 
     for line in lines:

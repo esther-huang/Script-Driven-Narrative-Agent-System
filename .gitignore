@@ -38,6 +38,7 @@ test/.chroma*/
 htmlcov/
 
 narrative_dump.txt
+DEPLOYMENT.md
 
 .runtime/
 poster/

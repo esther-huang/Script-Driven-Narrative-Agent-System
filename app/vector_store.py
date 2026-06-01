@@ -137,6 +137,8 @@ class ChromaStore:
             return 'clue'
         if knowledge_type == 'setting':
             return 'setting'
+        if knowledge_type == 'rule':
+            return 'rule'
         return 'other'
 
     def search(self, query: str, k: int = 5) -> list[dict]:

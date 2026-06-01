@@ -472,7 +472,9 @@ Open the URL shown by Streamlit (usually `http://localhost:8501`).
 
 ## Public Demo Deployment
 
-For a public playable deployment checklist, see [DEPLOYMENT.md](DEPLOYMENT.md).
+Public deployments should configure secrets through the hosting provider rather than
+committing local key files. The bundled `Demo Story` uses a pre-parsed snapshot to reduce
+public demo parser costs, while uploaded Markdown stories are still parsed live.
 
 ## Notes
 
@@ -497,7 +499,7 @@ Directory contents:
 * `test/test_database.py`: Tests `app/database.py` (database creation, insert, read, state updates)
 * `test/test_parser.py`: Tests `app/parser.py` (Markdown parsing and scene/plot extraction)
 * `test/test_rag.py`: Tests `app/rag.py` (query generation and knowledge classification)
-* `test/test_rules_loader.py`: Tests `app/rules_loader.py` (loading `database/GameRules.md` into knowledge chunks)
+* `test/test_rules_loader.py`: Tests `app/rules_loader.py` (loading the lightweight d100 rules summary into knowledge chunks)
 * `test/test_state.py`: Legacy progression test harness kept under `test/`
 * `test/test_vector_store.py`: Tests `app/vector_store.py` (insertion and retrieval)
 * `test/test_agent_graph.py`: Tests `app/agent_graph.py` (complete single-turn workflow)

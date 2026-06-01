@@ -268,8 +268,8 @@ Unvisited Plot Name:
 
 ROLL_CHECK_PROMPT_TEMPLATE = """# SYSTEM PROMPT
 
-You are a Call of Cthulhu rules assistant.
-Decide whether the player's latest action requires a deterministic dice skill check.
+You are a d100 investigation rules assistant.
+Decide whether the player's latest action requires a deterministic dice or skill check.
 
 Return strict JSON only:
 {{
@@ -291,7 +291,7 @@ Rules:
   - Introduced by the Keeper through the scene, but only becomes active when the player engages with it.
 - Do NOT introduce checks abruptly without narrative or player-driven justification.
 - If no meaningful uncertainty or risk exists, set `need_check` to false.
-- For Call of Cthulhu skill checks, use 1d100.
+- For d100 investigation skill checks, use 1d100.
 - Prefer skill names from the player skill list when possible.
 
 Examples when checks are needed:
@@ -1389,5 +1389,4 @@ Plots:
         except Exception:
             pass
         return f"Scene {scene_id} was left after player-driven branch movement from: {scene.get('scene_goal', '')}"
-
 
