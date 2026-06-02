@@ -1509,6 +1509,7 @@ def _inject_demo_theme() -> None:
                 box-shadow: none !important;
             }}
 
+            [data-testid="stBottom"],
             [data-testid="stBottomBlockContainer"],
             [data-testid="stChatFloatingInputContainer"] {{
                 background: linear-gradient(180deg, rgba(3, 12, 17, 0), rgba(3, 12, 17, 0.84) 38%, rgba(3, 12, 17, 0.96)) !important;
@@ -1516,6 +1517,7 @@ def _inject_demo_theme() -> None:
                 border: 0 !important;
             }}
 
+            [data-testid="stBottom"] > div,
             [data-testid="stBottomBlockContainer"] > div,
             [data-testid="stChatFloatingInputContainer"] > div {{
                 background: transparent !important;
@@ -1537,6 +1539,18 @@ def _inject_demo_theme() -> None:
                 backdrop-filter: blur(12px);
             }}
 
+            [data-testid="stChatInput"] form,
+            [data-testid="stChatInput"] [data-baseweb="textarea"],
+            [data-testid="stChatInput"] [data-baseweb="base-input"],
+            [data-testid="stChatInput"] [data-baseweb="textarea"] > div,
+            [data-testid="stChatInput"] [data-baseweb="base-input"] > div,
+            [data-testid="stChatInput"] div:has(> textarea) {{
+                background: transparent !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                outline: 0 !important;
+            }}
+
             [data-testid="stChatInput"] textarea,
             .stTextInput input,
             .stTextArea textarea,
@@ -1553,6 +1567,8 @@ def _inject_demo_theme() -> None:
                 background: transparent !important;
                 border: 0 !important;
                 color: #f8f1df !important;
+                box-shadow: none !important;
+                outline: 0 !important;
             }}
 
             [data-testid="stChatInput"] textarea::placeholder {{
