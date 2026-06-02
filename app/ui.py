@@ -1501,8 +1501,40 @@ def _inject_demo_theme() -> None:
             }}
 
             [data-testid="stChatInput"] {{
-                background: rgba(6, 18, 24, 0.88) !important;
-                border-color: rgba(215, 177, 74, 0.24) !important;
+                max-width: min(62rem, calc(100vw - 2rem));
+                margin: 0 auto;
+                padding: 0 !important;
+                background: transparent !important;
+                border: 0 !important;
+                box-shadow: none !important;
+            }}
+
+            [data-testid="stBottomBlockContainer"],
+            [data-testid="stChatFloatingInputContainer"] {{
+                background: linear-gradient(180deg, rgba(3, 12, 17, 0), rgba(3, 12, 17, 0.84) 38%, rgba(3, 12, 17, 0.96)) !important;
+                box-shadow: none !important;
+                border: 0 !important;
+            }}
+
+            [data-testid="stBottomBlockContainer"] > div,
+            [data-testid="stChatFloatingInputContainer"] > div {{
+                background: transparent !important;
+                box-shadow: none !important;
+                border: 0 !important;
+            }}
+
+            [data-testid="stBottomBlockContainer"] {{
+                padding: 1.15rem 0 0.8rem !important;
+            }}
+
+            [data-testid="stChatInput"] > div {{
+                background: rgba(8, 22, 30, 0.9) !important;
+                border: 1px solid rgba(238, 223, 180, 0.58) !important;
+                border-radius: 999px !important;
+                box-shadow:
+                    0 18px 42px rgba(0, 0, 0, 0.42),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+                backdrop-filter: blur(12px);
             }}
 
             [data-testid="stChatInput"] textarea,
@@ -1513,6 +1545,33 @@ def _inject_demo_theme() -> None:
                 background: rgba(6, 18, 24, 0.78) !important;
                 color: #f8f1df !important;
                 border-color: rgba(215, 177, 74, 0.22) !important;
+            }}
+
+            [data-testid="stChatInput"] textarea {{
+                min-height: 2.9rem !important;
+                padding: 0.7rem 3.1rem 0.65rem 1.05rem !important;
+                background: transparent !important;
+                border: 0 !important;
+                color: #f8f1df !important;
+            }}
+
+            [data-testid="stChatInput"] textarea::placeholder {{
+                color: rgba(221, 229, 236, 0.52) !important;
+                opacity: 1 !important;
+            }}
+
+            [data-testid="stChatInput"] button {{
+                background: transparent !important;
+                border: 0 !important;
+                color: #e9edf4 !important;
+                box-shadow: none !important;
+            }}
+
+            [data-testid="stChatInput"] button svg {{
+                color: #e9edf4 !important;
+                fill: #e9edf4 !important;
+                stroke: #e9edf4 !important;
+                opacity: 0.92;
             }}
 
             [data-testid="stMarkdownContainer"] p,
