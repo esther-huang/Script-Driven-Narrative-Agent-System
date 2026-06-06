@@ -130,6 +130,7 @@ def main() -> int:
 
         at = click_button(at, 'Create Character', 'Create Investigator')
         assert not at.exception, at.exception
+        assert 'Harbor Detective' not in str(at), 'custom story metadata should not show demo-specific character presets'
 
         at = click_button(at, 'Enter Story', 'Enter Graymouth Harbor')
         assert not at.exception, at.exception

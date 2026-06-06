@@ -1162,13 +1162,13 @@ def _inject_demo_theme() -> None:
             display: inline-flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.7rem;
-            min-width: min(25rem, calc(100vw - 2rem));
-            padding: 1.35rem 1.5rem 1.2rem;
+            gap: 0.65rem;
+            min-width: min(20rem, calc(100vw - 2rem));
+            padding: 1.15rem 1.25rem 1.05rem;
             border: 1px solid rgba(215, 177, 74, 0.28);
             border-radius: 8px;
-            background: rgba(8, 20, 27, 0.82);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+            background: rgba(8, 20, 27, 0.72);
+            box-shadow: 0 22px 68px rgba(0, 0, 0, 0.3);
             color: var(--um-ink-strong);
         }
 
@@ -1202,8 +1202,8 @@ def _inject_demo_theme() -> None:
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 3.2rem;
-            height: 3.2rem;
+            width: 2.7rem;
+            height: 2.7rem;
             border-radius: 999px;
             border: 1px solid rgba(215, 177, 74, 0.5);
             background:
@@ -1224,7 +1224,7 @@ def _inject_demo_theme() -> None:
 
         .gm-loading-text {
             color: #fff2c6;
-            font-size: 1rem;
+            font-size: 0.94rem;
             font-weight: 800;
             line-height: 1.35;
         }
@@ -1871,7 +1871,6 @@ def _fallback_public_hint_lines(db: Database, state: dict[str, object]) -> list[
     scene_description = str((scene or {}).get('scene_description', '') or '').strip()
     plot_name = str((plot or {}).get('plot_name', '') or '').strip()
     plot_goal = str((plot or {}).get('plot_goal', '') or '').strip()
-    raw_text = str((plot or {}).get('raw_text', '') or '').strip()
     language = str(state.get('output_language', 'English') or 'English').lower()
     chinese = language.startswith('chinese')
 
@@ -1931,12 +1930,6 @@ def _fallback_public_hint_lines(db: Database, state: dict[str, object]) -> list[
         else:
             lines.append(f'Pick one concrete action around "{handle}": ask, inspect, search, or compare it with a clue you already have.')
 
-    if raw_text and not lines:
-        if chinese:
-            lines.append(f'先从眼前最具体的东西下手：{_short_text(raw_text, 90)}')
-        else:
-            lines.append(f'Start with the most concrete thing in front of you: {_short_text(raw_text, 90)}')
-
     deduped: list[str] = []
     for line in lines:
         clean = line.strip()
@@ -1977,8 +1970,9 @@ Rules:
 - Output exactly one short hint sentence.
 - Write entirely in {language}.
 - Do not mention that you are an AI or that this is a hint.
-- Do not reveal hidden clues, answers, culprit identity, final solution, or future plot beats.
+- Do not reveal hidden clues, answers, culprit identity, final solution, future plot beats, or Keeper-only notes.
 - Use the player's recent context first. If they are stuck at an obstacle, suggest a concrete action they can try.
+- Suggest an action category, not a discovery. Do not name evidence that has not appeared in recent play or the scene description.
 - Keep it under 28 words in English, or under 45 Chinese characters.
 
 Current scene:
@@ -1988,7 +1982,6 @@ Description: {_short_text(scene.get('scene_description', ''), 700)}
 Current plot:
 Name: {plot.get('plot_name', '')}
 Goal: {plot.get('plot_goal', '')}
-Keeper-only plot notes: {_short_text(plot.get('raw_text', ''), 900)}
 
 Recent play:
 {recent_context or '(No player action yet.)'}
@@ -2035,30 +2028,31 @@ def _render_public_hint_controls(db: Database, state: dict[str, object]) -> None
     )
 
 
-def _demo_character_presets(generated_builds: list[dict[str, object]]) -> list[dict[str, object]]:
+def _demo_character_presets(generated_builds: list[dict[str, object]], *, use_demo_presets: bool = True) -> list[dict[str, object]]:
     presets: list[dict[str, object]] = []
-    for item in _demo_items('character_presets'):
-        if not isinstance(item, dict):
-            continue
-        stats = _parse_stats_line(str(item.get('stats', '') or ''))
-        if not stats or not _validate_coc_stats(stats):
-            continue
-        derived = _calc_derived(stats)
-        archetype = str(item.get('archetype', '') or 'Investigator').strip()
-        occupation = [str(skill).strip() for skill in item.get('occupation_skills', []) if str(skill).strip()] if isinstance(item.get('occupation_skills'), list) else []
-        interest = [str(skill).strip() for skill in item.get('interest_skills', []) if str(skill).strip()] if isinstance(item.get('interest_skills'), list) else []
-        presets.append(
-            {
-                'archetype': archetype,
-                'default_name': str(item.get('default_name', '') or archetype).strip(),
-                'background': str(item.get('background', '') or '').strip(),
-                'stats': stats,
-                'line': _stats_to_line(stats),
-                'derived': derived,
-                'occupation_suggested': _ensure_default_skill_lines(occupation),
-                'interest_suggested': interest,
-            }
-        )
+    if use_demo_presets:
+        for item in _demo_items('character_presets'):
+            if not isinstance(item, dict):
+                continue
+            stats = _parse_stats_line(str(item.get('stats', '') or ''))
+            if not stats or not _validate_coc_stats(stats):
+                continue
+            derived = _calc_derived(stats)
+            archetype = str(item.get('archetype', '') or 'Investigator').strip()
+            occupation = [str(skill).strip() for skill in item.get('occupation_skills', []) if str(skill).strip()] if isinstance(item.get('occupation_skills'), list) else []
+            interest = [str(skill).strip() for skill in item.get('interest_skills', []) if str(skill).strip()] if isinstance(item.get('interest_skills'), list) else []
+            presets.append(
+                {
+                    'archetype': archetype,
+                    'default_name': str(item.get('default_name', '') or archetype).strip(),
+                    'background': str(item.get('background', '') or '').strip(),
+                    'stats': stats,
+                    'line': _stats_to_line(stats),
+                    'derived': derived,
+                    'occupation_suggested': _ensure_default_skill_lines(occupation),
+                    'interest_suggested': interest,
+                }
+            )
 
     if presets:
         return presets
@@ -2272,12 +2266,7 @@ def _render_loading_state(target: object, text: str, centered: bool = False) -> 
             <div class="gm-parse-overlay">
                 <div class="gm-loading-shell">
                     <div class="gm-loading-icon" aria-hidden="true"></div>
-                    <div class="gm-loading-kicker">Keeper is preparing the table</div>
                     <div class="gm-loading-text">{safe_text}</div>
-                    <div class="gm-loading-subtext">Arranging scenes, clues, and the first playable beat.</div>
-                    <div class="gm-loading-dots" aria-hidden="true">
-                        <span></span><span></span><span></span>
-                    </div>
                 </div>
             </div>
             """,
@@ -2748,6 +2737,24 @@ def _install_script_bundle(db: Database, vector: ChromaStore, bundle: dict[str, 
     return len(scenes), len(knowledge)
 
 
+def _parse_source_metadata(db: Database) -> dict[str, object]:
+    raw = db.get_summary('parse_source_meta')
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except Exception:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _uses_demo_story_presets(db: Database) -> bool:
+    source_metadata = _parse_source_metadata(db)
+    source_file = str(source_metadata.get('source_file_name', '') or '').strip()
+    source_path = str(source_metadata.get('source_path', '') or '').strip()
+    return source_file == DEMO_SCRIPT_PATH.name or source_path.endswith(str(DEMO_SCRIPT_PATH.relative_to(PROJECT_ROOT)))
+
+
 def _first_playable_position(scenes: list[dict[str, object]]) -> tuple[dict[str, object] | None, dict[str, object] | None]:
     for scene in scenes:
         plots = scene.get('plots', [])
@@ -3106,12 +3113,18 @@ def run_app() -> None:
             st.rerun()
 
     elif stage == 'character':
+        uses_demo_story_presets = PUBLIC_DEMO_MODE and _uses_demo_story_presets(db)
         if PUBLIC_DEMO_MODE:
             _render_stage_tracker('character')
+            character_copy = (
+                'Choose a ready-made build, add a name and background, then enter the case.'
+                if uses_demo_story_presets
+                else 'Choose a flexible investigator, add a name and background, then enter your uploaded story.'
+            )
             _render_section_header(
                 _demo_text('continue_button', 'Create Character'),
                 'Step 3',
-                'Choose a ready-made build, add a name and background, then enter the case.',
+                character_copy,
             )
         else:
             _render_section_header('Character', 'Step 3')
@@ -3136,7 +3149,7 @@ def run_app() -> None:
         selected_build = archetype_to_build[selected_archetype_name]
 
         if PUBLIC_DEMO_MODE:
-            presets = _demo_character_presets(st.session_state.coc_builds)
+            presets = _demo_character_presets(st.session_state.coc_builds, use_demo_presets=uses_demo_story_presets)
             preset_names = [str(preset.get('archetype', 'Investigator')) for preset in presets]
             if not preset_names:
                 st.error('No playable character presets are available.')
