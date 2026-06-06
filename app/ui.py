@@ -1864,7 +1864,7 @@ def _hint_subject(text: str, prefixes: tuple[str, ...]) -> str:
     return compact
 
 
-def _fallback_public_hint_lines(db: Database, state: dict[str, object], hint_level: int = 1) -> list[str]:
+def _fallback_public_hint_lines(db: Database, state: dict[str, object]) -> list[str]:
     scene = db.get_scene(str(state.get('current_scene_id', '') or ''))
     plot = db.get_plot(str(state.get('current_plot_id', '') or ''))
     scene_name = str((scene or {}).get('scene_name', '') or '').strip()
@@ -1894,53 +1894,48 @@ def _fallback_public_hint_lines(db: Database, state: dict[str, object], hint_lev
     lower_plot = (plot_name or plot_goal).lower()
     lines: list[str] = []
 
-    if hint_level <= 1:
+    if 'speak' in lower_plot or 'talk' in lower_plot or 'question' in lower_plot:
         if chinese:
-            lines.append('先选一个眼前可见的人、物品或入口，做一个具体动作，不要急着猜最终答案。')
+            lines.append(f'先问 {subject or "当前人物"}：谁来过、少了什么、哪个细节最不对劲。')
         else:
-            lines.append('Choose one visible person, object, or entrance, and take one concrete action before guessing the answer.')
-    elif 'speak' in lower_plot or 'talk' in lower_plot or 'question' in lower_plot:
-        if chinese:
-            lines.append(f'先从 {subject or "当前人物"} 入手。可以问对方看见了什么、有什么东西不见了、哪个细节让人不舒服。')
-        else:
-            lines.append(f'Start with {subject or "the person in front of you"}. Ask what they saw, what is missing, and which detail feels out of place.')
+            lines.append(f'Ask {subject or "the person in front of you"} who came by, what is missing, and which detail feels wrong.')
     elif 'inspect' in lower_plot or 'examine' in lower_plot or 'search' in lower_plot:
         if chinese:
-            lines.append(f'{subject or "当前地点"} 值得慢一点查。重点看重复的形状、刻痕、摆放得过于刻意的东西，或者通往下一个地方的痕迹。')
+            lines.append(f'慢慢查 {subject or "当前地点"}，重点看重复形状、刻痕、反常摆放和去向痕迹。')
         else:
-            lines.append(f'{subject or "the current place"} is worth a closer look. Search for repeated shapes, marks, anything arranged too deliberately, or a route to the next lead.')
+            lines.append(f'Inspect {subject or "the current place"} for repeated shapes, marks, odd placement, or traces leading onward.')
     elif 'open' in lower_plot or 'locked' in lower_plot or 'gate' in lower_plot:
         if chinese:
-            lines.append(f'围绕 {subject or "这道阻碍"} 做一个具体动作：请持钥匙的人帮忙、检查锁和附近痕迹，或尝试安静打开。')
+            lines.append(f'围绕 {subject or "这道阻碍"} 行动：请人开门、查锁附近痕迹，或安静打开。')
         else:
-            lines.append(f'Focus on {subject or "the obstacle"}: ask someone with access, inspect the lock and nearby traces, or try opening it quietly.')
+            lines.append(f'Focus on {subject or "the obstacle"}: ask for access, inspect nearby traces, or open it quietly.')
     elif 'read' in lower_plot:
         if chinese:
-            lines.append(f'先读 {subject or "这份文字材料"}，再把反复出现的名字、数字、地点和你已经听到的异常现象对照起来。')
+            lines.append(f'先读 {subject or "这份文字材料"}，再对照反复出现的名字、数字和异常现象。')
         else:
-            lines.append(f'Read {subject or "the written clue"} first, then compare repeated names, numbers, places, and odd details you have already heard.')
+            lines.append(f'Read {subject or "the written clue"}, then compare repeated names, numbers, and odd details you already heard.')
     elif 'confront' in lower_plot:
         if chinese:
-            lines.append(f'不要空手质问 {subject or "对方"}。先拿一个你已经发现的证据或矛盾点去施压。')
+            lines.append(f'不要空手质问 {subject or "对方"}，拿一个已发现的证据或矛盾点施压。')
         else:
-            lines.append(f'Do not confront {subject or "them"} empty-handed. Bring one piece of evidence or one contradiction you have already found.')
+            lines.append(f'Do not confront {subject or "them"} empty-handed; bring one found clue or contradiction.')
     elif 'end' in lower_plot or 'decide' in lower_plot:
         if chinese:
-            lines.append('这里更像选择题：先确认你理解了规则，再决定是安静地修正它，还是用更激烈的办法中断它。')
+            lines.append('先确认规则，再决定是安静修正它，还是用更激烈的方法中断它。')
         else:
-            lines.append('This is closer to a choice point: make sure you understand the pattern, then decide whether to correct it quietly or interrupt it more forcefully.')
+            lines.append('Confirm the pattern first, then decide whether to correct it quietly or interrupt it forcefully.')
     elif plot_name or plot_goal:
         handle = plot_name or plot_goal
         if chinese:
-            lines.append(f'围绕“{handle}”做一个具体动作：询问、观察、搜查，或比较你已经拿到的线索。')
+            lines.append(f'围绕“{handle}”做一个具体动作：问、查、搜，或比较已有线索。')
         else:
-            lines.append(f'Pick one concrete action around "{handle}": ask, inspect, search, or compare it with a clue you already have.')
+            lines.append(f'Pick one concrete action around "{handle}": ask, inspect, search, or compare clues.')
 
-    if hint_level >= 3 and raw_text and not lines:
+    if raw_text and not lines:
         if chinese:
-            lines.append(f'可以把注意力放在这个情境里最具体的可互动对象上：{_short_text(raw_text, 90)}')
+            lines.append('先找当前情境里最具体、最可互动的人或物，做一个明确行动。')
         else:
-            lines.append(f'Focus on the most concrete interactable thing in this situation: {_short_text(raw_text, 90)}')
+            lines.append('Look for the most concrete interactable person or object here, then take one clear action.')
 
     deduped: list[str] = []
     for line in lines:
@@ -1969,29 +1964,26 @@ def _recent_play_context(messages: list[dict[str, object]], limit: int = 4) -> s
     return '\n'.join(lines)
 
 
-def _generate_public_hint(db: Database, state: dict[str, object], hint_level: int = 1) -> list[str]:
+def _generate_public_hint(db: Database, state: dict[str, object]) -> list[str]:
     scene = db.get_scene(str(state.get('current_scene_id', '') or '')) or {}
     plot = db.get_plot(str(state.get('current_plot_id', '') or '')) or {}
     language = str(state.get('output_language', 'English') or 'English')
     recent_context = _recent_play_context(list(st.session_state.get('messages', [])))
     prompt = f"""You are a tabletop RPG Keeper giving a stuck player one gentle hint.
 
-Goal: help the player choose a next action without solving the mystery.
-
-Hint level: {hint_level}
-- Level 1: name a broad action direction using only visible/current context.
-- Level 2: suggest a more concrete question, skill, or place to inspect, but do not reveal the result.
-- Level 3: point to one useful object, person, or route from the Keeper notes, but do not explain its hidden meaning or final payoff.
+Goal: bridge the gap between "I have no idea what to do" and "the answer was spoiled."
 
 Rules:
 - Output exactly one short hint sentence.
 - Write entirely in {language}.
 - Do not mention that you are an AI or that this is a hint.
-- You may read Keeper-only plot notes to understand the intended clue path.
+- You may read Keeper-only plot notes to understand the intended clue path and difficulty.
 - Do not reveal answers, culprit identity, final solution, future plot beats, or the hidden meaning of a clue.
-- Do not say what the player will find. Suggest what to try, ask, inspect, compare, or follow.
-- Use the player's recent context first. If they are stuck at an obstacle, suggest a concrete action they can attempt.
-- Do not name a hidden object at level 1. At level 2, name only visible/currently introduced objects. At level 3, you may name one object/person/route from notes without explaining it.
+- Do not say what the player will find.
+- Suggest one concrete action: ask, inspect, search, compare, or follow a route.
+- Use the player's recent context first.
+- If naming an object, person, or place, choose something already visible, already introduced, or naturally present in the current scene.
+- Avoid naming a discovery that requires a successful check unless the player has already found it.
 - Keep it under 28 words in English, or under 45 Chinese characters.
 
 Current scene:
@@ -2010,10 +2002,10 @@ Recent play:
         text = call_llm(prompt, step_name='generate_player_hint', max_retries=1, timeout=25).strip()
     except Exception as exc:  # noqa: BLE001
         LOGGER.warning('Public hint LLM generation failed; using fallback hint: %s', exc)
-        return _fallback_public_hint_lines(db, state, hint_level)
+        return _fallback_public_hint_lines(db, state)
     text = re.sub(r'\s+', ' ', text).strip().strip('"').strip("'")
     if not text:
-        return _fallback_public_hint_lines(db, state, hint_level)
+        return _fallback_public_hint_lines(db, state)
     return [_short_text(text, 180)]
 
 
@@ -2024,22 +2016,19 @@ def _render_public_hint_controls(db: Database, state: dict[str, object]) -> None
     if st.session_state.get('public_demo_hint_key') != hint_key:
         st.session_state.public_demo_hint_key = hint_key
         st.session_state.pop('public_demo_hint_lines', None)
-        st.session_state.public_demo_hint_level = 0
 
-    current_hint_level = int(st.session_state.get('public_demo_hint_level', 0) or 0)
-    button_label = ('Get a hint' if current_hint_level <= 0 else 'More specific hint') if not chinese else ('获取提示' if current_hint_level <= 0 else '更具体一点')
+    button_label = 'Get a hint' if not chinese else '获取提示'
     title = 'Hint' if not chinese else '提示'
 
     hint_col, _ = st.columns([1.1, 4])
     with hint_col:
         if st.button(button_label, key='public_demo_hint_button', use_container_width=True, type='tertiary'):
-            next_hint_level = min(current_hint_level + 1, 3)
-            budget_ok, budget_message = _reserve_public_demo_turn()
-            if budget_ok:
-                st.session_state.public_demo_hint_level = next_hint_level
-                st.session_state.public_demo_hint_lines = _generate_public_hint(db, state, next_hint_level)
-            else:
-                st.session_state.public_demo_hint_lines = [budget_message]
+            if not st.session_state.get('public_demo_hint_lines'):
+                budget_ok, budget_message = _reserve_public_demo_turn()
+                if budget_ok:
+                    st.session_state.public_demo_hint_lines = _generate_public_hint(db, state)
+                else:
+                    st.session_state.public_demo_hint_lines = [budget_message]
 
     hint_lines = st.session_state.get('public_demo_hint_lines') or []
     if not hint_lines:
@@ -2461,7 +2450,6 @@ STORY_RUNTIME_SESSION_KEYS = (
     'character_background_input',
     'build_pick_label',
     'public_demo_hint_lines',
-    'public_demo_hint_level',
     'public_demo_hint_key',
 )
 
@@ -3405,7 +3393,6 @@ def run_app() -> None:
             user_msg = st.chat_input(placeholder)
         if user_msg:
             st.session_state.pop('public_demo_hint_lines', None)
-            st.session_state.public_demo_hint_level = 0
             if PUBLIC_DEMO_MODE:
                 if len(user_msg) > PUBLIC_DEMO_MAX_INPUT_CHARS:
                     st.warning(f'Please keep each action under {PUBLIC_DEMO_MAX_INPUT_CHARS} characters.')
